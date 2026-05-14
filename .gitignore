@@ -1,0 +1,20 @@
+# Logs and output
+logs/
+state/
+__pycache__/
+*.pyc
+
+# Wallet file (Privacy!)
+wallets.txt
+
+# OS-specific
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Virtual environment
+venv/
+.venv/
+env/
+.env

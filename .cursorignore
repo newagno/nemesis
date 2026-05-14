@@ -1,0 +1,6 @@
+.antigravity/
+.venv/
+logs/
+state/
+node_modules/
+wallets.txt

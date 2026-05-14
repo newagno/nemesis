@@ -1,0 +1,193 @@
+from web3 import Web3
+from typing import Dict, Any
+
+# PLACEHOLDER ABIs
+# Need to be updated with actual Nemesis Testnet contract ABIs from explorer
+ERC20_ABI = [
+    {"constant": True, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"},
+    {"constant": False, "inputs": [{"name": "_to", "type": "address"}, {"name": "_value", "type": "uint256"}], "name": "transfer", "outputs": [{"name": "success", "type": "bool"}], "type": "function"},
+    {"constant": False, "inputs": [{"name": "_spender", "type": "address"}, {"name": "_value", "type": "uint256"}], "name": "approve", "outputs": [{"name": "success", "type": "bool"}], "type": "function"},
+    {"constant": True, "inputs": [{"name": "_owner", "type": "address"}, {"name": "_spender", "type": "address"}], "name": "allowance", "outputs": [{"name": "", "type": "uint256"}], "type": "function"},
+    {"constant": True, "inputs": [], "name": "decimals", "outputs": [{"name": "", "type": "uint8"}], "type": "function"},
+]
+
+WETH_ABI = [
+    {"constant": False, "inputs": [], "name": "deposit", "outputs": [], "stateMutability": "payable", "type": "function"},
+    {"constant": False, "inputs": [{"name": "wad", "type": "uint256"}], "name": "withdraw", "outputs": [], "stateMutability": "nonpayable", "type": "function"},
+    {"constant": True, "inputs": [{"name": "", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "", "type": "uint256"}], "stateMutability": "view", "type": "function"},
+]
+
+VAULT_ABI = [
+    {"name": "deposit", "inputs": [{"name": "token", "type": "address"}, {"name": "amount", "type": "uint256"}], "type": "function"},
+    {"name": "withdraw", "inputs": [{"name": "token", "type": "address"}, {"name": "amount", "type": "uint256"}], "type": "function"},
+]
+
+ROUTER_ABI = [
+    {"inputs":[{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactETHForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"payable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForETH","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint256","name":"amountADesired","type":"uint256"},{"internalType":"uint256","name":"amountBDesired","type":"uint256"},{"internalType":"uint256","name":"amountAMin","type":"uint256"},{"internalType":"uint256","name":"amountBMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"addLiquidity","outputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"amountB","type":"uint256"},{"internalType":"uint256","name":"liquidity","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amountTokenDesired","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"addLiquidityETH","outputs":[{"internalType":"uint256","name":"amountToken","type":"uint256"},{"internalType":"uint256","name":"amountETH","type":"uint256"},{"internalType":"uint256","name":"liquidity","type":"uint256"}],"stateMutability":"payable","type":"function"},
+]
+
+PERP_ABI = [
+    {"name": "createIncreasePosition", "inputs": [{"name": "path", "type": "address[]"}, {"name": "indexToken", "type": "address"}, {"name": "amountIn", "type": "uint256"}, {"name": "minOut", "type": "uint256"}, {"name": "sizeDelta", "type": "uint256"}, {"name": "isLong", "type": "bool"}, {"name": "acceptablePrice", "type": "uint256"}, {"name": "executionFee", "type": "uint256"}, {"name": "referralCode", "type": "bytes32"}, {"name": "callbackTarget", "type": "address"}], "type": "function"},
+]
+
+FAUCET_ABI = [
+    {"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"requestTokens","outputs":[],"stateMutability":"nonpayable","type":"function"},
+]
+
+# CONTRACT ADDRESSES (Sepolia / Nemesis)
+# Data gathered from official research and V1 testnet verification
+CONTRACTS = {
+    "BTC": Web3.to_checksum_address("0x2591230465a68D924FBCBa5E3304c2EdA0d52e5B"),
+    "NLP": Web3.to_checksum_address("0xd10C785554fCAe6e3B86948cc94AaF5b26EFA026"),
+    "NEM": Web3.to_checksum_address("0x8d427943b850179300B372483aACE7B887845BF3"),
+    "NLP_1": Web3.to_checksum_address("0xAFa16ce98f64c0499Dd3E7f7D8e3009821aa45B3"),
+    "MINABO": Web3.to_checksum_address("0xea4DAAf49Bd55021c23b70b194B4436F199A7606"),
+    "NLP_2": Web3.to_checksum_address("0x782bD49e2b6a7BdA4D59B72fd734b84298688372"),
+    "mETH": Web3.to_checksum_address("0x26eAE856BB1cE198937D4469948a5140D7eFf6c0"),
+    "NLP_3": Web3.to_checksum_address("0xF670Fe24221411aE50D12A8F8aD85bf600590876"),
+    "LINK": Web3.to_checksum_address("0xfD0c6Cb1A3E4f5a662C106bEdEfd2Ff8E0251137"),
+    "NLP_4": Web3.to_checksum_address("0x431A4A06264FCfbcd31e875D97804aCDD5803028"),
+    "Test1": Web3.to_checksum_address("0xa514679B89E824cC2b620ba9377A849BBA7Fd562"),
+    "NLP_5": Web3.to_checksum_address("0xB90D635E87b189C7C30B19005FBa5FEEFc6A7688"),
+    "WETH": Web3.to_checksum_address("0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"),
+    "NLP_6": Web3.to_checksum_address("0x0B6a0A69B7040b2281730cBaE6060b3b1b2ed3A9"),
+    "DAI": Web3.to_checksum_address("0xd67215fD6c0890493F34aF3C5E4231cE98871fCb"),
+    "UNI": Web3.to_checksum_address("0x7438eA86A89b7d53aF5264Fb3aBaE1172b046663"),
+    "NLP_7": Web3.to_checksum_address("0xc4Ea6989cfD612A1a1eD57335415A534DE50962E"),
+    "USDC": Web3.to_checksum_address("0x10279e6333f9d0EE103F4715b8aaEA75BE61464C"),
+    "NLP_8": Web3.to_checksum_address("0x337c9fECF78AAd05f6aB742609BeDe3A4F3483cF"),
+    "NEMESIS": Web3.to_checksum_address("0x47b7eD0e04EDaB477c46543bdf766aCea155dd2f"),
+    "NLP_9": Web3.to_checksum_address("0x377B837B30AF5eF8C3401038c47a16Cfc1AA926E"),
+    "Test2": Web3.to_checksum_address("0xBcE723dC31A53eA268223220ffABf0bB2F91D80c"),
+    "NLP_10": Web3.to_checksum_address("0xD019E00B1cd9C5e2F67a0278B065705923BDec9d"),
+    "Test3": Web3.to_checksum_address("0x12A830AeD198ef536826512D0fD9cceA98F7567c"),
+    "NLP_11": Web3.to_checksum_address("0x1E240150d9fE34E039B99c70032a274cA0E983b2"),
+    "USDC_1": Web3.to_checksum_address("0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"),
+    "NLP_12": Web3.to_checksum_address("0x3D1f8CCc4D1F06334EF0629b8013637ebFcF5804"),
+    "LINK_1": Web3.to_checksum_address("0x779877A7B0D9E8603169DdbD7836e478b4624789"),
+    "NLP_13": Web3.to_checksum_address("0xea6E6843BD6fE622201BfcaeA04D69926a90AEbd"),
+    "PEPE": Web3.to_checksum_address("0x2e5d74F916003ad7615FB7B36afc3366a7c540A7"),
+    "NLP_14": Web3.to_checksum_address("0x062D6b66Fba0020fb100522a8B008792aB805EBd"),
+    "VIRTUAL": Web3.to_checksum_address("0x9b4Fde3607596eF502aC43c3d897450000e93d05"),
+    "NLP_15": Web3.to_checksum_address("0x14C5C90BB4B8b9370409ec76d1033461e77fb3Bf"),
+    "BASE": Web3.to_checksum_address("0x23f83273547125AeE1096eBEaF9675EC9e898dB5"),
+    "NLP_16": Web3.to_checksum_address("0x6e7C23bF8bF0e450e433C0599bb88bd6B5d38658"),
+    "ONE": Web3.to_checksum_address("0x80D494D084087Af738987f2e2807099E35867e10"),
+    "NLP_17": Web3.to_checksum_address("0x14D4745D873828AECa258FAa1BeD6EC8D7cA80E0"),
+    "KNX": Web3.to_checksum_address("0xCE4aD1fBdB5854CA4d41B701374B835406f43d9f"),
+    "NLP_18": Web3.to_checksum_address("0x8F463c431bB2D09Cdc2c418b2C8b781bC2962397"),
+    "Owi": Web3.to_checksum_address("0xcC2A61C433cCd47D2519946B4531E4d7b6d9A04E"),
+    "NLP_19": Web3.to_checksum_address("0x8C440CB249238F28BD04584377d2734E665466E0"),
+    "HIB": Web3.to_checksum_address("0x0a24807eBfF649d9C2ef8Bbe7CfE031AbD6b2095"),
+    "NLP_20": Web3.to_checksum_address("0xe4bd88A4caEb4d6b5a3da7cDA56a782b12183264"),
+    "SHIB": Web3.to_checksum_address("0x79AEE81e6863A223793bd59C9b3497599B995C26"),
+    "NLP_21": Web3.to_checksum_address("0xfd6e264c4307b8a286F5A91F5455490549b04A94"),
+    "CHZ": Web3.to_checksum_address("0x42877438df132A854179A21e113F3DD3cc62B853"),
+    "NLP_22": Web3.to_checksum_address("0x157ABA669BFfD0Db32f0855F6A28169e7111944e"),
+    "Owi_1": Web3.to_checksum_address("0xB3820704A3F105C31b8b601119d9B7dfcE61a743"),
+    "NLP_23": Web3.to_checksum_address("0x03c00f41059bdBEEE4848b3efD4B1bFEC036e038"),
+    "AAAA": Web3.to_checksum_address("0x3D839EdE08F03BDf66675C61d327ad45a040E559"),
+    "NLP_24": Web3.to_checksum_address("0x529E66a7851979F1fB7CD03F8f69e6c000c2B8BB"),
+    "DAI_1": Web3.to_checksum_address("0xd030A2465ee661338De1F02d05042bBF20d5D127"),
+    "NLP_25": Web3.to_checksum_address("0x80f18C1846792D6818ffD4f28594725aFa1c3B3c"),
+    "Router": Web3.to_checksum_address("0xA1f78beD1a79B9aEC972E373e0E7f63d8cAce4a8"),
+    "PositionRouter": Web3.to_checksum_address("0x93310a5682976Dcd6D458690A216429Bb5Fe720a"),
+    "Vault": Web3.to_checksum_address("0xbc8A0642938138407B1143825700868a86a6058e"),
+    "Faucet": Web3.to_checksum_address("0x16503cE996eB971B70Be4E9c90226343516503cE"),
+}
+
+MASSIVE_POOLS = [
+    Web3.to_checksum_address("0x92bd9d99bf47a677ae2197932bd86d2d72575686"),
+    Web3.to_checksum_address("0xd0d34fe88d7a754c96da4d17a245e91572bdccef"),
+    Web3.to_checksum_address("0x778239ac4f335db4215a6c5a9f777651e8457223"),
+    Web3.to_checksum_address("0x321592ffa62290a608c4367749a5fc823c60552c"),
+    Web3.to_checksum_address("0x84605fffe96a1961a144e695247029eb3a60c316"),
+    Web3.to_checksum_address("0x42f052f625e28c802f04978909ece3f9d6e5e3a1"),
+    Web3.to_checksum_address("0xc22a1defdbc7f2734559132505c6bc8b43830dea"),
+    Web3.to_checksum_address("0xf40a3dc6613e64c9fbc0ce0dbb7374024729159f"),
+    Web3.to_checksum_address("0x61ff961f3856bbfd9e8cfd67443970b40f4f817b"),
+    Web3.to_checksum_address("0x0286413fd99573bb59faaacef0a5515e1196e0d2"),
+    Web3.to_checksum_address("0x2ac148c0b8704a39128aac1c6a5d014eeb282882"),
+    Web3.to_checksum_address("0x44c804e525e3c3dc4c03a76c9546333232a22091"),
+    Web3.to_checksum_address("0x12b1b37648e3904e1c30f6a411b069315b999600"),
+    Web3.to_checksum_address("0x29822684eb062a01e935946d5e166ba5def91caf"),
+    Web3.to_checksum_address("0xa4089e7c8b11ddc11d69784689e12f13aa5d7e58"),
+    Web3.to_checksum_address("0xac674102c51178ff275751fb32f69fca35e409a3"),
+    Web3.to_checksum_address("0x8ea6216ae0c83c700fac0d4cc1f0e8ea0ae5e766"),
+    Web3.to_checksum_address("0x541c2bc9effa096f1a96a09755ef03c37d44193c"),
+    Web3.to_checksum_address("0x9308f73b39dc0041c3353e795fb37ae2251bb94f"),
+    Web3.to_checksum_address("0xbac80852a5463db417e7ab27b13197a1a8184674"),
+    Web3.to_checksum_address("0x1e8215e24479be93d3d09e0f01e613c181684b65"),
+    Web3.to_checksum_address("0xb4d72ffaf3ed90ae91cdb7168779026ae3f4e050"),
+    Web3.to_checksum_address("0x5fac591d2c6d0ece9d3455dfc2429cdf49cfd5c9"),
+    Web3.to_checksum_address("0x3e80ee66cca4baf1806e7bea5456a6148108813b"),
+    Web3.to_checksum_address("0x6b3a8949f997761b57eaf063c962b2545c4c9b9f"),
+    Web3.to_checksum_address("0x7266f0d9ffd7d0c11269bfd987a74e46c54269d6"),
+    Web3.to_checksum_address("0x197b527b51038c69665654682a8d225116ee232e"),
+    Web3.to_checksum_address("0x52ce6199d38d9f696825f94a2f6427a2724e7306"),
+    Web3.to_checksum_address("0xca64f680078f2474e244b930d5501411e639592f"),
+    Web3.to_checksum_address("0xabbfb786254f62bd5cf69d419c69b015e8c663c7"),
+    Web3.to_checksum_address("0x4b8f6ecb76bf6d91e5f980762453ca1a76e0b5cd"),
+    Web3.to_checksum_address("0x138bd2b9f1217c40d9711244cca30a8542f412af"),
+    Web3.to_checksum_address("0x702395cd5beaa02703d68609a8991b1dce0d3792"),
+    Web3.to_checksum_address("0x4ac7ee723af7ee0a2e6dbe54172f0e4f9caf6748"),
+    Web3.to_checksum_address("0x4175f39e30160ae59e4e904222c913aafc5fb7bf"),
+    Web3.to_checksum_address("0x6541338cec6ff7126a94d370f2667b3bf937741e"),
+    Web3.to_checksum_address("0xf5d5a20ad6174e859f590a9f325bda255ac05fdd"),
+    Web3.to_checksum_address("0x4d3c80b448d170bec9c64f9b9cd2e31d2aabe1a4"),
+    Web3.to_checksum_address("0x3043a6f7827b38a9a6d6fbf2e8bbeebe5a7246f1"),
+    Web3.to_checksum_address("0x193a8cc9e52f43d2583e35bfa63d1c141ba5cb88"),
+    Web3.to_checksum_address("0x5b2bcc05f0a6063eecbe02a0fbe2be1ab618eb27"),
+    Web3.to_checksum_address("0xcc7300e978b4b2fd499b2cc64de8a7ef496550ad"),
+    Web3.to_checksum_address("0x7433d83057e819d810842787fe3e4d4ed7e883cb"),
+    Web3.to_checksum_address("0x8bb6b97c49a127a7f9e279549d4112e95b0b7b4c"),
+    Web3.to_checksum_address("0xe7522a2b2e90db167b3125d61fbfb44ee92fa6fc"),
+    Web3.to_checksum_address("0x46d7cce242dba1946da423ae14918c8a099df1d9"),
+    Web3.to_checksum_address("0x52431ccdc5dad8a6f609b70629117100836f8e21"),
+    Web3.to_checksum_address("0x63ebb151f18f663f1cd29c6d0a7f47aa8350eebf"),
+    Web3.to_checksum_address("0xa018cf89a9bc8a87b13f33d22ec62229cf9756c9"),
+    Web3.to_checksum_address("0x4e667075294de4111022e46ea05453b3f868d3ac"),
+    Web3.to_checksum_address("0xf155c6707923593dc94cb480fb577f93934e3645"),
+    Web3.to_checksum_address("0xc958b6eace8a6b9f88f552fca96d4a92336b008d"),
+    Web3.to_checksum_address("0x8764dad0a0b73b0e0f85bf9b8c9d351b578d754b"),
+    Web3.to_checksum_address("0x927febe26ee8d2da9ca34324b17aad659ec7ea6e"),
+    Web3.to_checksum_address("0x2cb644fa223e20bf3d9ff3f0f4d8c15e65536788"),
+    Web3.to_checksum_address("0x515ac55cdd02895448f1393aea447fce65f23d55"),
+    Web3.to_checksum_address("0x27753aa4b5772b21155ee3646f9e8fd39043124a"),
+    Web3.to_checksum_address("0x8fbd294d6c6d79b303c170d4d4d26d5b64fc9b25"),
+    Web3.to_checksum_address("0xe2b41a6926257f5150ab67297d376fdd477509d4"),
+    Web3.to_checksum_address("0xb0e5cf0b576018313941f43aa1ec402dad74dc65"),
+    Web3.to_checksum_address("0xa75d9cbfd53356f5824c9adde8f7c2c250047bbe"),
+    Web3.to_checksum_address("0x43bba3520ae310ff3205cd8082438b20fdff8825"),
+    Web3.to_checksum_address("0x0127eb9942ff8351f3b14c7b0fac8e4b3c4c4fca"),
+    Web3.to_checksum_address("0xb994817ed1533047ea191b0c00b8503721f21524"),
+    Web3.to_checksum_address("0x7bb28810e4ade10af5aee9807d10f5634493a0be"),
+    Web3.to_checksum_address("0xb183c0be766e6d4682f660ab06430a07b300a03e"),
+    Web3.to_checksum_address("0xc545378e33e3e5ff2554dd9ad6307b1499226235"),
+    Web3.to_checksum_address("0x97373b46fb22ad4df6448e09599959487bea3d42"),
+    Web3.to_checksum_address("0x9395fdb0d3d6eb2db30aa5504d38af80e55665f5"),
+    Web3.to_checksum_address("0x98202b3a6c0007951b72b63e08539de58d72d4fb"),
+    Web3.to_checksum_address("0xdd2c5086ba89d0ca9bafcfeb63b78dec8c2a38c7"),
+    Web3.to_checksum_address("0x9bab900561b8352157f7cc45f39318d05f2cfa8c"),
+    Web3.to_checksum_address("0x496875c28f01cdcf68c43318b3898ca850cfa960"),
+    Web3.to_checksum_address("0xca2e880b7c05fb3484b866d2077144dc934ae405"),
+    Web3.to_checksum_address("0xd2e637fe52316cf1653e51f01ec851772a348b88"),
+    Web3.to_checksum_address("0x45ebf40e1229a3b7cd7f8a2cb30e4cd412c9f84d"),
+    Web3.to_checksum_address("0x6f955962d1aba0c4f314da99bfdc3704f0bf7935"),
+    Web3.to_checksum_address("0xe58bba04f642dcccb838badcf9a355133c8a91ce"),
+    Web3.to_checksum_address("0xb35a9dda807b7221dc21b01e200a76fae489865a"),
+    Web3.to_checksum_address("0x7045e6e98944c22cf20339e638b75609c521d337"),
+    Web3.to_checksum_address("0xe43549163e872e58ec41f38f38d03ef87c15c3fd"),
+    Web3.to_checksum_address("0xf07fed607334180e823700f9ebc2ef79a1706a43"),
+]
+
+def get_web3(rpc_url: str) -> Web3:
+    return Web3(Web3.HTTPProvider(rpc_url))
+
+def get_contract(w3: Web3, address: str, abi: list):
+    return w3.eth.contract(address=w3.to_checksum_address(address), abi=abi)
+
